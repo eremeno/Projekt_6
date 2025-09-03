@@ -77,7 +77,7 @@ def test_navigation_to_shop(page: Page) -> None:
     assert "shop" in page.url.lower()
 
 
-@pytest.mark.parametrize("search_term", ["serum", "ampoule", "seram"])
+@pytest.mark.parametrize("search_term", ["serum", "ampoule", "milk"])
 
 def test_search_functionality(page: Page, search_term: str) -> None:
     """
@@ -101,3 +101,4 @@ def test_search_functionality(page: Page, search_term: str) -> None:
 
     assert search_term in page.url.lower(), f"URL neobsahuje '{search_term}': {page.url}"
     assert search_term in heading_text, f"Nadpis výsledků neobsahuje '{search_term}': {heading_text}"
+
