@@ -1,31 +1,38 @@
 """
 Projekt: Tři automatizované testy
+Popis:
+Tento projekt obsahuje tři testy automatizované pomocí Playwright a pytest:
+1. Ověření titulku domovské stránky.
+2. Ověření funkčnosti navigace na stránku "Shop".
+3. Parametrizované testy vyhledávání pro různé výrazy.
 """
 
 import os
 import pytest
 from playwright.sync_api import sync_playwright, Page, Browser, BrowserContext
 
-URL = "https://catkoreabeauty.de/"
+URL: str = "https://catkoreabeauty.de/"
 
-COOKIE_BTN_SELECTOR = "button:has-text('Accept all')"
-SHOP_LINK_SELECTOR = "#menu-item-27193 > a > span"
-SEARCH_ICON_SELECTOR = "div.wd-header-search a"
-SEARCH_INPUT_SELECTOR = "input.s.wd-search-inited"
-SEARCH_RESULTS_SELECTOR = "h1"
+COOKIE_BTN_SELECTOR: str = "button:has-text('Accept all')"
+SHOP_LINK_SELECTOR: str = "#menu-item-27193 > a > span"
+SEARCH_ICON_SELECTOR: str = "div.wd-header-search a"
+SEARCH_INPUT_SELECTOR: str = "input.s.wd-search-inited"
+SEARCH_RESULTS_SELECTOR: str = "h1"
 
 
 @pytest.fixture(scope="session")
 def browser() -> Browser:
     """
     Fixture pro spuštění instance Chromium browseru.
-    Parametry headless režimu a slow_mo lze konfigurovat
-    pomocí environmentálních proměnných:
-        HEADLESS=true/false
-        SLOW_MO=milisekundy
+    Pro konfiguraci se používají environmentální proměnné:
+        HEADLESS (str): "true"/"false" – určuje, zda se spustí v headless režimu.
+        SLOW_MO (str): Počet milisekund zpomalení mezi akcemi (výchozí 2000 ms).
+
+    Returns:
+        Browser: Spuštěná instance Chromium browseru.
     """
-    headless = os.getenv("HEADLESS", "false").lower() == "true"
-    slow_mo = int(os.getenv("SLOW_MO", "2000"))
+    headless: bool = os.getenv("HEADLESS", "false").lower() == "true"
+    slow_mo: int = int(os.getenv("SLOW_MO", "2000"))
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=headless, slow_mo=slow_mo)
@@ -37,8 +44,13 @@ def browser() -> Browser:
 def page(browser: Browser) -> Page:
     """
     Fixture pro vytvoření nové stránky (Page).
-    Otevře domovskou stránku a pokud se objeví cookie lišta,
-    klikne na tlačítko pro přijetí cookies.
+    Otevře domovskou stránku a přijme cookies, pokud je zobrazen banner.
+
+    Args:
+        browser (Browser): Instance prohlížeče Playwright Chromium.
+
+    Yields:
+        Page: Otevřená stránka s připraveným kontextem.
     """
     context: BrowserContext = browser.new_context()
     page: Page = context.new_page()
@@ -56,7 +68,7 @@ def page(browser: Browser) -> Page:
 
 def test_homepage_title(page: Page) -> None:
     """
-    Ověří, že domovská stránka má v titulku text 'Catkoreabeauty'.
+    Test: Ověří, že domovská stránka má v titulku text 'Catkoreabeauty'.
     
     Args:
         page (Page): Otevřená stránka.
@@ -66,7 +78,7 @@ def test_homepage_title(page: Page) -> None:
 
 def test_navigation_to_shop(page: Page) -> None:
     """
-    Ověří funkčnost navigace na stránku 'Shop'.
+    Test: Ověří funkčnost navigace na stránku 'Shop'.
     Klikne na odkaz 'Shop' a zkontroluje,
     že v URL se nachází řetězec 'shop'.
 
@@ -81,11 +93,13 @@ def test_navigation_to_shop(page: Page) -> None:
 
 def test_search_functionality(page: Page, search_term: str) -> None:
     """
-    Ověří funkčnost vyhledávání:
-    - klikne na ikonu hledání
-    - zadá parametrizovaný výraz (search_term)
-    - odešle Enter
-    - ověří, že výsledky obsahují hledaný text
+    Test: Ověří funkčnost vyhledávání na e-shopu.
+    Postup:
+        - klikne na ikonu hledání,
+        - zadá parametrizovaný výraz (search_term),
+        - odešle Enter,
+        - ověří, že výsledky obsahují hledaný text
+          jak v URL, tak v hlavním nadpisu.
 
     Args:
         page (Page): Otevřená stránka.
@@ -97,8 +111,7 @@ def test_search_functionality(page: Page, search_term: str) -> None:
     search_input.press("Enter")
 
     page.wait_for_selector(SEARCH_RESULTS_SELECTOR)
-    heading_text = page.locator(SEARCH_RESULTS_SELECTOR).first.inner_text().lower()
+    heading_text = str =page.locator(SEARCH_RESULTS_SELECTOR).first.inner_text().lower()
 
-    assert search_term in page.url.lower(), f"URL neobsahuje '{search_term}': {page.url}"
-    assert search_term in heading_text, f"Nadpis výsledků neobsahuje '{search_term}': {heading_text}"
-
+    assert search_term in page.url.lower()
+    assert search_term in heading_text
