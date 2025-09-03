@@ -1,19 +1,34 @@
-"""Projekt: Tři automatizované testy"""
+"""
+Projekt: Tři automatizované testy
+"""
 
+import os
 import pytest
 from playwright.sync_api import sync_playwright, Page, Browser, BrowserContext
 
 URL = "https://catkoreabeauty.de/"
 
+COOKIE_BTN_SELECTOR = "button:has-text('Accept all')"
+SHOP_LINK_SELECTOR = "#menu-item-27193 > a > span"
+SEARCH_ICON_SELECTOR = "div.wd-header-search a"
+SEARCH_INPUT_SELECTOR = "input.s.wd-search-inited"
+SEARCH_RESULTS_SELECTOR = "h1"
+
+
 @pytest.fixture(scope="session")
 def browser() -> Browser:
     """
     Fixture pro spuštění instance Chromium browseru.
-    Browser se spustí v režimu `headless=False` s nastaveným zpomalením akcí.
-    Vrací instanci browseru pro použití v testech.
+    Parametry headless režimu a slow_mo lze konfigurovat
+    pomocí environmentálních proměnných:
+        HEADLESS=true/false
+        SLOW_MO=milisekundy
     """
+    headless = os.getenv("HEADLESS", "false").lower() == "true"
+    slow_mo = int(os.getenv("SLOW_MO", "2000"))
+
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False, slow_mo=2000)
+        browser = p.chromium.launch(headless=headless, slow_mo=slow_mo)
         yield browser
         browser.close()
 
@@ -21,31 +36,28 @@ def browser() -> Browser:
 @pytest.fixture
 def page(browser: Browser) -> Page:
     """
-    Fixture pro vytvoření nové stránky (Page) v rámci testovacího kontextu.
-    Otevře domovskou stránku URL a pokud se zobrazí cookie lišta,
+    Fixture pro vytvoření nové stránky (Page).
+    Otevře domovskou stránku a pokud se objeví cookie lišta,
     klikne na tlačítko pro přijetí cookies.
-
-    Args:
-        browser (Browser): Spuštěný Chromium browser.
-
-    Returns:
-        Page: Objekt stránky, se kterou testy pracují.
     """
     context: BrowserContext = browser.new_context()
     page: Page = context.new_page()
     page.goto(URL)
 
-    cookie_btn = page.locator("button:has-text('Accept all')")
-    if cookie_btn.is_visible():
-        cookie_btn.click()
+    try:
+        page.wait_for_selector(COOKIE_BTN_SELECTOR, timeout=3000)
+        page.locator(COOKIE_BTN_SELECTOR).click()
+    except Exception:
+        pass
+
     yield page
     context.close()
 
 
 def test_homepage_title(page: Page) -> None:
     """
-    Ověří, že domovská stránka má v titulku text "Catkoreabeauty".
-
+    Ověří, že domovská stránka má v titulku text 'Catkoreabeauty'.
+    
     Args:
         page (Page): Otevřená stránka.
     """
@@ -61,23 +73,31 @@ def test_navigation_to_shop(page: Page) -> None:
     Args:
         page (Page): Otevřená stránka.
     """
-    page.locator("#menu-item-27193 > a > span").click()
+    page.locator(SHOP_LINK_SELECTOR).click()
     assert "shop" in page.url.lower()
 
 
-def test_search_functionality(page: Page) -> None:
+@pytest.mark.parametrize("search_term", ["serum", "ampoule", "seram"])
+
+def test_search_functionality(page: Page, search_term: str) -> None:
     """
-    Ověří funkčnost vyhledávání na webu.
-    Klikne na ikonu hledání, zadá výraz 'serum' a odešle Enter.
-    Poté zkontroluje, že v URL se objeví řetězec 'serum'
-    nebo že se zobrazí výsledky hledání.
+    Ověří funkčnost vyhledávání:
+    - klikne na ikonu hledání
+    - zadá parametrizovaný výraz (search_term)
+    - odešle Enter
+    - ověří, že výsledky obsahují hledaný text
 
     Args:
         page (Page): Otevřená stránka.
+        search_term (str): Hledaný výraz pro test.
     """
-    search_icon = page.locator("div.wd-header-search a")
-    search_icon.click()
-    search_input = page.locator("input.s.wd-search-inited")
-    search_input.fill("serum")
+    page.locator(SEARCH_ICON_SELECTOR).click()
+    search_input = page.locator(SEARCH_INPUT_SELECTOR)
+    search_input.fill(search_term)
     search_input.press("Enter")
-    assert "serum" in page.url.lower() or page.locator("h1").first.is_visible()
+
+    page.wait_for_selector(SEARCH_RESULTS_SELECTOR)
+    heading_text = page.locator(SEARCH_RESULTS_SELECTOR).first.inner_text().lower()
+
+    assert search_term in page.url.lower(), f"URL neobsahuje '{search_term}': {page.url}"
+    assert search_term in heading_text, f"Nadpis výsledků neobsahuje '{search_term}': {heading_text}"
