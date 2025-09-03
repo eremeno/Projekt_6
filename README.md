@@ -58,7 +58,7 @@ pytest -v
 
 - klikne na ikonu hledání
 
-- zadá výraz (např. serum, ampoule, milk).
+- zadá výraz (např.: serum, ampoule, milk).
 
 - ověří, že se **serum** objeví v URL i v nadpisu výsledků.
 
