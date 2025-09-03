@@ -3,8 +3,10 @@
 # Automatizované testy pro [catkoreabeauty.de](https://catkoreabeauty.de/)
 
 Tento projekt obsahuje sadu **automatizovaných testů** vytvořených pomocí [Playwright](https://playwright.dev/python/) a [pytest](https://docs.pytest.org/).  
-Testy ověřují základní funkčnost e-shopu **Cat Korea Beauty**, jako je načtení domovské stránky,  
-navigace do obchodu, vyhledávání produktů a správná práce s cookie lištou.
+Testy ověřují základní funkčnost e-shopu **Cat Korea Beauty**, 
+- načtení titulku domovské stránky
+- funkčnost navigace na stránku **Shop**
+- vyhledávání produktů (parametrizované pro více výrazů) a správná práce s cookie lištou.
 
 
 ## ⚙️ Použité technologie
@@ -34,9 +36,15 @@ pip install -r requirements.txt
 playwright install
 ```
 
-## 🧪 Spuštění testů
+### 4. V CI (headless režim, bez zpomalení)
+```bash
+HEADLESS=true SLOW_MO=0 pytest -v
+```
+**HEADLESS=true** → běží bez UI (vhodné pro CI/CD)
 
-### Spuštění všech testů:
+**SLOW_MO=0** → bez zpomalování kroků
+
+## 5. Spuštění testů
 ```bash
 pytest -v
 ```
@@ -46,12 +54,33 @@ pytest -v
 
 2. **test_navigation_to_shop** - Klikne na odkaz Shop a zkontroluje, že URL obsahuje shop.
 
-3. **test_search_functionality** - Ověří funkčnost vyhledávání: zadá serum a ověří, že výsledky odpovídají.
+3. **test_search_functionality** - 
 
-### 🔒 Cookie lišta
+- klikne na ikonu hledání
 
-Testy automaticky detekují a přijímají cookies kliknutím na tlačítko
-**„Accept all“**, pokud se cookie lišta zobrazí.
+- zadá výraz (např. serum, ampoule, seram).
+
+- ověří, že se **serum** objeví v URL i v nadpisu výsledků.
+
+### ⚙️ Údržba
+
+- Selektory jsou uloženy v konstantách v horní části souboru, aby se daly snadno spravovat.
+
+- **headless** a **slow_mo** jsou parametrizované přes proměnné prostředí → snadné použití v CI.
+
+- **Cookie banner** má explicitní čekání (wait_for_selector) pro stabilní běh testů.
+
+### Ukázkový výstup: 
+
+test_catkoreabeauty.py::test_homepage_title PASSED
+
+test_catkoreabeauty.py::test_navigation_to_shop PASSED
+
+test_catkoreabeauty.py::test_search_functionality[serum] PASSED
+
+test_catkoreabeauty.py::test_search_functionality[ampoule] PASSED
+
+test_catkoreabeauty.py::test_search_functionality[seram]  PASSED
 
 ## 📚 Autor
 Tento projekt byl vytvořen jako součást výukového kurzu Python Akademie od Engeto.
