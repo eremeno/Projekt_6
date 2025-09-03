@@ -58,7 +58,7 @@ pytest -v
 
 - klikne na ikonu hledání
 
-- zadá výraz (např. serum, ampoule, seram).
+- zadá výraz (např. serum, ampoule, milk).
 
 - ověří, že se **serum** objeví v URL i v nadpisu výsledků.
 
@@ -80,7 +80,7 @@ test_catkoreabeauty.py::test_search_functionality[serum] PASSED
 
 test_catkoreabeauty.py::test_search_functionality[ampoule] PASSED
 
-test_catkoreabeauty.py::test_search_functionality[seram]  PASSED
+test_catkoreabeauty.py::test_search_functionality[milk]  PASSED
 
 ## 📚 Autor
 Tento projekt byl vytvořen jako součást výukového kurzu Python Akademie od Engeto.
